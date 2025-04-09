@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Bookstore</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Custom animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Unified dark background for the entire site */
+    body {
+      background: linear-gradient(135deg, #0f0f1a, #1a1a2e);
+      min-height: 100vh;
+    }
+
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    .scale-in { animation: scaleIn 0.3s ease-out; }
+
+    /* Neon button effect */
+    .neon-button {
+      background: linear-gradient(135deg, #4f46e5, #3b82f6);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .neon-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 15px rgba(79, 70, 229, 0.8), 0 0 30px rgba(59, 130, 246, 0.4);
+    }
+
+    .neon-button::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .neon-button:hover::after {
+      opacity: 1;
+    }
+
+    /* Glass-like navbar */
+    .glass-nav {
+      background: rgba(30, 30, 47, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Modal backdrop blur */
+    .modal-backdrop {
+      backdrop-filter: blur(10px);
+    }
+
+    /* Professional card design */
+    .pro-card {
+      background: rgba(45, 45, 68, 0.7);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .pro-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2), 0 0 10px rgba(79, 70, 229, 0.2);
+    }
+
+    /* Smooth scroll behavior */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+
+<body class="text-gray-100 font-sans" style="font-family: 'Inter', sans-serif;">
+
+  <!-- Navbar -->
+  <nav class="glass-nav text-white p-4 shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-3xl font-bold flex items-center space-x-2">
+        <span>📚</span>
+        <span>Online Bookstore</span>
+      </h1>
+      <div id="user-section" class="space-x-4">
+        <button id="login-btn" class="neon-button text-white px-6 py-2 rounded-lg">Login</button>
+        <button id="register-btn" class="neon-button text-white px-6 py-2 rounded-lg">Register</button>
+        <span id="user-name" class="hidden"></span>
+        <button id="logout-btn" class="hidden neon-button bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative text-white py-24 shadow-lg">
+    <div class="container mx-auto text-center">
+      <h2 class="text-5xl font-extrabold mb-6 animate-fade-in">Discover Your Next Favorite Book!</h2>
+      <p class="text-lg font-light mb-8">Explore our curated collection of books across genres.</p>
+      <button id="browse-books-btn" class="neon-button text-white px-8 py-3 rounded-lg">
+        Browse Books
+      </button>
+    </div>
+  </section>
+
+  <!-- Books List (Initially Hidden) -->
+  <section id="books-section" class="container mx-auto mt-12 px-4 hidden">
+    <h3 class="text-center text-3xl font-bold mb-8">Featured Books</h3>
+    
+    <!-- Books Grid -->
+    <div id="book-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <!-- Books will be dynamically loaded here -->
+      <div class="col-span-full text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        <p class="mt-2">Loading books...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Login & Registration Modals -->
+  <div id="auth-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center modal-backdrop z-50">
+    <div class="bg-gray-800 p-8 rounded-lg w-full max-w-md shadow-xl transform scale-in">
+      <h2 class="text-2xl font-bold mb-6 text-white" id="auth-title">Login</h2>
+      <input id="auth-email" type="email" placeholder="Email" 
+             class="w-full mb-4 p-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-white">
+      <input id="auth-password" type="password" placeholder="Password"
+             class="w-full mb-4 p-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-white">
+      <input id="auth-username" type="text" placeholder="Username (for registration)" 
+             class="hidden w-full mb-4 p-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-white">
+      <button id="auth-submit" 
+              class="neon-button text-white w-full py-3 rounded-lg">Submit</button>
+      <button id="auth-close" 
+              class="text-red-400 w-full mt-4 underline hover:text-red-300">Close</button>
+    </div>
+  </div>
+
+  <!-- Book Details Modal -->
+  <div id="book-details-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center modal-backdrop z-50">
+    <div class="bg-gray-800 p-8 rounded-lg w-full max-w-3xl shadow-xl transform scale-in">
+      <div class="flex justify-between items-start mb-4">
+        <h2 class="text-2xl font-bold text-white" id="book-detail-title">Book Details</h2>
+        <button id="book-detail-close" class="text-gray-400 hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="book-detail-content" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Book details will be loaded here -->
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button id="add-to-cart" class="neon-button text-white px-6 py-2 rounded-lg mr-4">Add to Cart</button>
+        <button id="buy-now" class="neon-button text-white px-6 py-2 rounded-lg">Buy Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shopping Cart Icon -->
+  <div class="fixed bottom-6 right-6 z-40">
+    <a href="cart.html"><button id="cart-button" class="neon-button flex items-center justify-center w-14 h-14 rounded-full">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+      <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+    </button></a>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 bg-opacity-50 text-white py-6 mt-12">
+    <div class="container mx-auto text-center">
+      <p>&copy; 2025 Online Bookstore. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    const apiUrl = 'http://localhost:5500';
+    let isRegister = false;
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+    const cartKey = `cart-${username}`;
+    let cartItems = JSON.parse(localStorage.getItem(cartKey)) || [];
+    let allBooks = [];
+    
+    // Update cart count
+    function updateCartCount() {
+      document.getElementById('cart-count').innerText = cartItems.length;
+    }
+    
+    // Initialize cart count
+    updateCartCount();
+
+    // Browse Books Button Functionality
+    document.getElementById('browse-books-btn').addEventListener('click', function() {
+      const booksSection = document.getElementById('books-section');
+      booksSection.classList.remove('hidden');
+      booksSection.scrollIntoView({ behavior: 'smooth' });
+      
+      // Highlight button when clicked
+      this.classList.add('scale-in');
+      setTimeout(() => this.classList.remove('scale-in'), 300);
+      
+      // Load books if not already loaded
+      if (allBooks.length === 0) {
+        loadBooks();
+      }
+    });
+
+    // User state check
+    if (token) {
+      document.getElementById('user-name').innerText = `Welcome, ${username}`;
+      document.getElementById('user-name').classList.remove('hidden');
+      document.getElementById('login-btn').classList.add('hidden');
+      document.getElementById('register-btn').classList.add('hidden');
+      document.getElementById('logout-btn').classList.remove('hidden');
+    }
+
+    // Show Login/Register Modal
+    const showAuthModal = (register) => {
+      isRegister = register;
+      document.getElementById('auth-title').innerText = register ? 'Register' : 'Login';
+      document.getElementById('auth-modal').classList.remove('hidden');
+      document.getElementById('auth-username').classList.toggle('hidden', !register);
+    };
+
+    document.getElementById('login-btn').addEventListener('click', () => showAuthModal(false));
+    document.getElementById('register-btn').addEventListener('click', () => showAuthModal(true));
+
+    // Close Modal
+    document.getElementById('auth-close').addEventListener('click', () => {
+      document.getElementById('auth-modal').classList.add('hidden');
+    });
+
+    // Handle Login/Register
+    document.getElementById('auth-submit').addEventListener('click', async () => {
+      const username = document.getElementById('auth-username').value;
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      
+      const url = isRegister ? '/api/auth/register' : '/api/auth/login';
+
+      try {
+        const res = await fetch(`${apiUrl}${url}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(isRegister ? { username, email, password } : { email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          if (isRegister) {
+            alert('Registration successful! Please log in.');
+            showAuthModal(false);
+          } else {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('username', data.username);
+            location.reload();
+          }
+        } else {
+          alert(data.error || 'Something went wrong!');
+        }
+      } catch (error) {
+        console.error('Failed to submit form:', error);
+        alert('Could not connect to the server.');
+      }
+    });
+
+    // Logout functionality
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      location.reload();
+    });
+
+    // Show book details
+    function showBookDetails(book) {
+      const detailContent = document.getElementById('book-detail-content');
+      document.getElementById('book-detail-title').innerText = book.title;
+      
+      detailContent.innerHTML = `
+        <div class="flex flex-col">
+          ${book.image_url ? `<img src="${book.image_url}" class="w-full h-64 object-cover rounded-lg" alt="${book.title}">` : 
+          `<div class="w-full h-64 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <span class="text-2xl font-bold text-white">${book.title.substring(0, 2).toUpperCase()}</span>
+          </div>`}
+          <div class="mt-4">
+            <p class="text-2xl font-bold text-blue-400">$${book.price}</p>
+            <p class="text-sm text-gray-400 mt-2">Free shipping on orders over $35</p>
+            <div class="mt-4">
+              <div class="flex items-center">
+                <span class="text-yellow-400">★★★★</span><span class="text-gray-400">★</span>
+                <span class="ml-2 text-sm text-gray-400">(${Math.floor(Math.random() * 100) + 1} reviews)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg mb-2">Description</h3>
+          <p class="text-gray-300">${book.description || 'No description available.'}</p>
+          <p class="mt-4"><strong>Author:</strong> ${book.author}</p>
+          <p class="mt-2"><strong>Pages:</strong> ${book.pages || Math.floor(Math.random() * 400) + 100}</p>
+          <p class="mt-2"><strong>Publication:</strong> ${book.publication || '2024'}</p>
+          <div class="mt-4 bg-blue-900 bg-opacity-30 p-4 rounded-lg">
+            <p class="text-sm">Thousands of readers loved this bestselling title. Get your copy now before it sells out!</p>
+          </div>
+        </div>
+      `;
+      
+      // Add event listeners for buttons
+      document.getElementById('add-to-cart').onclick = () => {
+        if (!token) {
+          alert('Please login to add items to cart.');
+          return;
+        }
+        addToCart(book);
+        alert('Book added to cart!');
+      };
+      
+      document.getElementById('buy-now').onclick = () => {
+        if (!token) {
+          alert('Please login to buy items.');
+          return;
+        }
+        addToCart(book);
+        alert('Proceeding to checkout...');
+      };
+      
+      document.getElementById('book-details-modal').classList.remove('hidden');
+    }
+    
+    // Close book details modal
+    document.getElementById('book-detail-close').addEventListener('click', () => {
+      document.getElementById('book-details-modal').classList.add('hidden');
+    });
+    
+    // Add to cart functionality
+    function addToCart(book) {
+      cartItems.push(book);
+      localStorage.setItem(cartKey, JSON.stringify(cartItems));
+      updateCartCount();
+    }
+
+    // Fetch and display books
+    async function loadBooks() {
+      try {
+        // For demonstration, we'll create mock data if the API call fails
+        try {
+          const res = await fetch(`${apiUrl}/api/books`);
+          const books = await res.json();
+          allBooks = books;
+          displayBooks(allBooks);
+        } catch (error) {
+          console.warn('Could not fetch from API, using mock data');
+          // Create mock data without categories
+          const mockBooks = [
+            { id: 1, title: "The Great Novel", author: "Jane Author", price: 12.99, description: "A thrilling story of adventure and discovery." },
+            { id: 2, title: "Computer Science 101", author: "John Programmer", price: 29.99, description: "Learn the basics of programming and algorithms." },
+            { id: 3, title: "History of Art", author: "Michael Creator", price: 19.99, description: "A comprehensive look at art throughout human history." },
+            { id: 4, title: "Cooking Mastery", author: "Chef Gordon", price: 24.99, description: "Master the art of cooking with these professional recipes." },
+            { id: 5, title: "Mystery at Midnight", author: "Agatha Detective", price: 15.99, description: "A gripping mystery that will keep you guessing until the last page." },
+            { id: 6, title: "The Quantum Physics", author: "Albert Physicist", price: 34.99, description: "Understand the fundamental principles of quantum mechanics." },
+            { id: 7, title: "Ancient Civilizations", author: "Indiana Explorer", price: 22.99, description: "Discover the secrets of ancient civilizations around the world." },
+            { id: 8, title: "Self-Improvement Guide", author: "Life Coach", price: 18.99, description: "Practical steps to improve your life and achieve your goals." }
+          ];
+          allBooks = mockBooks;
+          displayBooks(allBooks);
+        }
+      } catch (error) {
+        console.error('Failed to load books:', error);
+        document.getElementById('book-list').innerHTML = `<p class="text-red-500 col-span-full text-center">Failed to load books.</p>`;
+      }
+    }
+    
+    function displayBooks(books) {
+      const bookList = document.getElementById('book-list');
+      bookList.innerHTML = ''; // Clear previous content
+      
+      if (books.length === 0) {
+        bookList.innerHTML = `<p class="text-center col-span-full py-8">No books found.</p>`;
+        return;
+      }
+
+      books.forEach((book) => {
+        const bookCard = document.createElement('div');
+        bookCard.className = "pro-card p-6 rounded-lg fade-in cursor-pointer";
+        bookCard.innerHTML = `
+          ${book.image_url ? 
+            `<img src="${book.image_url}" class="w-full h-48 object-cover rounded-lg mb-4" alt="${book.title}">` : 
+            `<div class="w-full h-48 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
+              <span class="text-4xl font-bold text-white">${book.title.substring(0, 2).toUpperCase()}</span>
+            </div>`
+          }
+          <h3 class="text-xl font-bold mb-2 text-white">${book.title}</h3>
+          <p class="text-gray-300"><strong>Author:</strong> ${book.author}</p>
+          <p class="text-blue-400 font-bold mt-1">$${book.price}</p>
+          <p class="text-gray-300 line-clamp-2 mt-2">${book.description || 'No description available.'}</p>
+          <div class="flex justify-between mt-4">
+            <button class="neon-button text-white px-4 py-2 rounded-lg view-details">Details</button>
+            <button class="neon-button text-white px-4 py-2 rounded-lg add-to-cart">Add to Cart</button>
+          </div>
+        `;
+        
+        bookCard.querySelector('.view-details').addEventListener('click', (e) => {
+          e.stopPropagation();
+          showBookDetails(book);
+        });
+        
+        bookCard.querySelector('.add-to-cart').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!token) {
+            alert('Please login to add items to cart.');
+            return;
+          }
+          addToCart(book);
+          
+          // Show a nice animation
+          const button = e.target;
+          const originalText = button.textContent;
+          button.textContent = "Added ✓";
+          button.classList.add("bg-green-600");
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove("bg-green-600");
+          }, 1000);
+        });
+        
+        // Make entire card clickable to view details
+        bookCard.addEventListener('click', () => showBookDetails(book));
+        
+        bookList.appendChild(bookCard);
+      });
+    }
+
+    // Show book section if directly accessed via URL with #books
+    if (window.location.hash === '#books') {
+      document.getElementById('books-section').classList.remove('hidden');
+      loadBooks();
+    }
+  </script>
+</body>
+</html>

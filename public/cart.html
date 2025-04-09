@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Your Cart</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Unified dark background */
+    body {
+      background: linear-gradient(135deg, #0f0f1a, #1a1a2e);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* Fancy neon button styling */
+    .neon-button {
+      background: linear-gradient(135deg, #4f46e5, #3b82f6);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .neon-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 15px rgba(79, 70, 229, 0.8), 0 0 30px rgba(59, 130, 246, 0.4);
+    }
+
+    /* Cart item card styling */
+    .cart-card {
+      background: rgba(45, 45, 68, 0.8);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .cart-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2), 0 0 10px rgba(79, 70, 229, 0.2);
+    }
+
+    /* Smooth scroll behavior */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+
+<body class="text-gray-100 p-10">
+
+  <!-- Cart Header -->
+  <h1 class="text-5xl font-bold mb-6 text-center">🛒 Your Cart</h1>
+
+  <!-- Cart Items -->
+  <div id="cart-items" class="space-y-4"></div>
+
+  <!-- Total Price Display -->
+  <h2 id="total-price" class="text-2xl font-semibold text-center mt-4"></h2>
+
+  <!-- Buttons -->
+  <div class="flex justify-center space-x-4 mt-8">
+    <button onclick="window.location.href='index.html'" class="neon-button text-white px-6 py-2 rounded-lg">🔙 Back to Store</button>
+    <button id="clear-cart" class="neon-button bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg">🗑️ Clear Cart</button>
+    <button id="checkout-btn" class="neon-button bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg">💸 Checkout</button>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div id="qr-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-gray-800 p-8 rounded-lg w-full max-w-md shadow-xl transform scale-in text-center">
+      <h2 class="text-2xl font-bold mb-4 text-white">Scan to Pay</h2>
+      <div id="qrcode" class="mb-4"></div>
+      <button id="close-qr" class="neon-button text-white px-6 py-2 rounded-lg bg-red-600">❌ Close</button>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    const username = localStorage.getItem('username');
+    const cartKey = `cart-${username}`;
+    const cartItems = JSON.parse(localStorage.getItem(cartKey)) || [];
+    const cartContainer = document.getElementById('cart-items');
+    const clearCartButton = document.getElementById('clear-cart');
+    const checkoutButton = document.getElementById('checkout-btn');
+    const totalPriceDisplay = document.getElementById('total-price');
+    const qrModal = document.getElementById('qr-modal');
+    const closeQrButton = document.getElementById('close-qr');
+
+    // Ensure user is logged in
+    if (!username) {
+      alert("Please log in first!");
+      window.location.href = "index.html";
+    }
+
+    // Load cart items
+    let totalPrice = cartItems.reduce((acc, item) => acc + parseFloat(item.price), 0);
+
+    if (cartItems.length === 0) {
+      cartContainer.innerHTML = '<p class="text-center text-gray-400">Your cart is empty!</p>';
+      checkoutButton.disabled = true;
+      checkoutButton.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+      cartItems.forEach((item, index) => {
+        cartContainer.innerHTML += `
+          <div class="cart-card p-4 rounded-lg flex justify-between items-center">
+            <div>
+              <h2 class="text-xl font-bold">${item.title}</h2>
+              <p>Price: <span class="text-blue-400 font-bold">$${item.price}</span></p>
+            </div>
+            <button class="text-red-500 hover:text-red-300 font-bold" onclick="removeItem(${index})">❌ Remove</button>
+          </div>`;
+      });
+      totalPriceDisplay.innerText = `Total Price: $${totalPrice.toFixed(2)}`;
+    }
+
+    // Clear Cart Button
+    clearCartButton.addEventListener('click', () => {
+      localStorage.removeItem(cartKey);
+      alert('🗑️ Cart Cleared!');
+      location.reload();
+    });
+
+    // Remove single item from cart
+    function removeItem(index) {
+      cartItems.splice(index, 1);
+      localStorage.setItem(cartKey, JSON.stringify(cartItems));
+      location.reload();
+    }
+
+    // Checkout Button — Generates Payment QR Code
+    checkoutButton.addEventListener('click', () => {
+      if (cartItems.length === 0) return alert("Your cart is empty!");
+
+      const upiID = "8317213934@ybl";
+      const upiAmount = totalPrice.toFixed(2);
+      const qrData = `upi://pay?pa=${upiID}&pn=Online Bookstore&am=${upiAmount}&cu=INR`;
+
+      qrModal.classList.remove('hidden');
+      document.getElementById('qrcode').innerHTML = "";
+      new QRCode(document.getElementById('qrcode'), {
+        text: qrData,
+        width: 200,
+        height: 200
+      });
+    });
+
+    // Close QR Modal
+    closeQrButton.addEventListener('click', () => {
+      qrModal.classList.add('hidden');
+    });
+  </script>
+
+</body>
+</html>
